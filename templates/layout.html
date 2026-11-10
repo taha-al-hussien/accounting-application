@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% block content %}
+
+{# {% set ns = namespace(base=0, profit=0, customers_net=0) %}
+{% for t in trades %}
+  {% if t['net'] is defined %}
+    {% set ns.customers_net = ns.customers_net + t['net'] %}
+  {% else %}
+    {% set ns.base = ns.base + t['base'] %}
+    {% set ns.profit = ns.profit + t['profit'] %}
+  {% endif %}
+{% endfor %}
+{% set total_all = ns.base + ns.profit + ns.customers_net %} #}
+
+<div class="page-wrapper">
+
+  <!-- Header: logo | totals | count -->
+  <div class="page-header d-print-none">
+    <div class="container-xl">
+      <div class="row align-items-center g-3">
+
+        <div class="col-12 col-lg-auto">
+          <div class="d-flex align-items-center gap-3">
+            <span class="avatar avatar-lg bg-primary-lt">
+              <i class="ti ti-briefcase fs-1"></i>
+            </span>
+            <div>
+              <a href="/" class="text-decoration-none text-reset d-block">
+                <h1 class="page-title mb-0">{{company_name}}</h1>
+              </a>
+              {# <div class="text-secondary">للثقة عنوان</div> #}
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-lg">
+          <div class="row g-2">
+            <div class="col-12 col-sm-4">
+              <div class="card card-sm">
+                <div class="card-body py-2">
+                  <div class="row align-items-center g-2">
+                    <div class="col-auto"><span class="avatar avatar-sm bg-blue-lt"><i class="ti ti-coin"></i></span>
+                    </div>
+                    <div class="col">
+                      <div class="text-secondary small">إجمالي رأس المال</div>
+                      <div class="h3 mb-0">{{ '{:,.2f}'.format(trades['total_base']) }}$</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-sm-4">
+              <div class="card card-sm">
+                <div class="card-body py-2">
+                  <div class="row align-items-center g-2">
+                    <div class="col-auto"><span class="avatar avatar-sm bg-green-lt"><i
+                          class="ti ti-trending-up"></i></span></div>
+                    <div class="col">
+                      <div class="text-secondary small">إجمالي الأرباح</div>
+                      <div class="h3 mb-0 text-green">{{ '{:,.2f}'.format(trades['total_profit']) }}$</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-sm-4">
+              <div class="card card-sm">
+                <div class="card-body py-2">
+                  <div class="row align-items-center g-2">
+                    <div class="col-auto"><span class="avatar avatar-sm bg-purple-lt"><i
+                          class="ti ti-wallet"></i></span></div>
+                    <div class="col">
+                      <div class="text-secondary small">المجموع الكلي <span class="text-secondary">(مع صافي
+                          الزبائن)</span></div>
+                      <div class="h3 mb-0">{{ '{:,.2f}'.format(trades['total_base'] + trades['total_profit']) }}$</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-auto d-flex flex-column align-items-center">
+          <span class="badge bg-blue-lt fs-4 px-3 py-2" onclick=location.reload()>
+            <i class="ti ti-layout-grid me-1"></i>{{ trades['content'] | length }} تجارات
+          </span>
+          <button type="button" class="btn btn-icon btn-ghost-secondary my-0" id="themeToggle" aria-label="تبديل الوضع">
+            <i class="ti ti-moon to-dark"></i>
+            <i class="ti ti-sun to-light"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <main class="page-body">
+    <div class="container-xl">
+      {% block trade %}
+      {% endblock %}
+    </div>
+  </main>
+</div>
+
+<style>
+  .card-hover {
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 .5rem 1.25rem rgba(0, 0, 0, .1);
+  }
+
+  [data-bs-theme="dark"] .to-dark {
+    display: none;
+  }
+
+  :root:not([data-bs-theme="dark"]) .to-light {
+    display: none;
+  }
+</style>
+
+<!-- ===== Flash notifications ===== -->
+<div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" style="z-index:1100"
+  id="flashContainer"></div>
+
+<style>
+  .flash-toast {
+    border: 0;
+    border-radius: 14px;
+    min-width: 340px;
+    max-width: 92vw;
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+    overflow: hidden;
+  }
+
+  .flash-toast .flash-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .flash-toast .flash-icon {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: var(--c);
+    background: color-mix(in srgb, var(--c) 14%, white);
+  }
+
+  .flash-toast .flash-title {
+    font-weight: 700;
+    color: var(--c);
+    line-height: 1.2;
+  }
+
+  .flash-toast .flash-msg {
+    color: #4b5563;
+    font-size: .95rem;
+  }
+
+  .flash-toast .flash-bar {
+    height: 4px;
+    background: var(--c);
+    animation: flashbar 5s linear forwards;
+  }
+
+  .flash-toast.show {
+    animation: flashin .35s ease;
+  }
+
+  @keyframes flashbar {
+    from {
+      width: 100%;
+    }
+
+    to {
+      width: 0;
+    }
+  }
+
+  @keyframes flashin {
+    from {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+  html = document.querySelector(':root');
+  theme = localStorage.getItem('ammar-theme')
+  html.setAttribute('data-bs-theme', theme ? theme : 'dark');
+  document.addEventListener('DOMContentLoaded', function () {
+    const messages = {{ get_flashed_messages(with_categories = true) | tojson
+  }};
+  const types = {
+    error: { color: '#d63939', icon: 'alert-circle', title: 'خطأ' },
+    success: { color: '#2fb344', icon: 'circle-check', title: 'تمت العملية' },
+    warning: { color: '#f59f00', icon: 'alert-triangle', title: 'تنبيه' },
+    info: { color: '#4299e1', icon: 'info-circle', title: 'معلومة' }
+  };
+  const box = document.getElementById('flashContainer');
+  const themeToggle = document.getElementById("themeToggle")
+  themeToggle.onclick = () => {
+    if (html.getAttribute("data-bs-theme") == "dark") {
+      html.setAttribute("data-bs-theme", "light")
+      localStorage.setItem('ammar-theme', 'light ')
+    } else {
+      html.setAttribute("data-bs-theme", "dark")
+      localStorage.setItem('ammar-theme', 'dark')
+    }
+  }
+  messages.forEach(function (m) {
+    const t = types[m[0]] || types.info;
+    let text = m[1];
+    try { text = JSON.parse(m[1]).msg || m[1]; } catch (e) { }
+    text = text.replace(/^خطأ:\s*/, '');   // العنوان يوضح أنه خطأ
+
+    const el = document.createElement('div');
+    el.className = 'toast flash-toast';
+    el.setAttribute('role', 'alert');
+    el.style.setProperty('--c', t.color);
+    el.innerHTML =
+      '<div class="flash-body">' +
+      '<div class="flash-icon"><i class="ti ti-' + t.icon + '"></i></div>' +
+      '<div class="flex-fill"><div class="flash-title"></div><div class="flash-msg"></div></div>' +
+      '<button type="button" class="btn-close text-danger" data-bs-dismiss="toast"></button>' +
+      '</div><div class="flash-bar"></div>';
+    el.querySelector('.flash-title').textContent = t.title;
+    el.querySelector('.flash-msg').textContent = text;
+
+    box.appendChild(el);
+    el.classList.add('show');
+    const close = function () { el.remove(); };
+    setTimeout(close, 5000);
+    el.querySelector('.btn-close').addEventListener('click', close);
+  });
+  });
+</script>
+
+{% endblock %}

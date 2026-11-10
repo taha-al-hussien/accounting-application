@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+{% block trade %}
+<!-- Trades -->
+<div class="row row-deck row-cards">
+  {% for trade in trades['content'] %}
+    {% set is_error = trade['status'] == 'error' %}
+    {% set is_customers = trade['url'] == '/customer' %}
+    {% if is_customers %}
+      {% set for_them = trade['for_them'] %}
+      {% set for_us = trade['for_us'] %}
+      {% set base = -for_us %}
+      {% set profit = for_them %}
+      {% set total = -for_us - for_them %}
+      {% set margin = (for_them / -for_us * 100) if total else 0 %}
+      {% set margin_label = 'نسبة الدين' %}
+      {% set left_label = 'لنا' %}
+      {% set right_label = 'لهم' %}
+      {% set positive = total >= 0 %}
+    {% else %}
+      {% set base = trade.get('base', 0) %}
+      {% set profit = trade.get('profit', 0) %}
+      {% set total = base + profit %}
+      {% set margin = (profit / base * 100) if base else 0 %}
+      {% set margin_label = 'نسبة الربح' %}
+      {% set left_label = 'رأس المال' %}
+      {% set right_label = 'الربح' %}
+      {% set positive = margin >= 0 %}
+    {% endif %}
+    {% set bar_color = 'bg-green' if positive else 'bg-red' %}
+    {% set text_color = 'text-green' if positive else 'text-red' %}
+
+    <div class="col-sm-6 col-lg-4 col-xl-3">
+      <div class="card card-hover">
+        <div class="card-status-top {{ 'bg-red' if is_error else bar_color }}"></div>
+        <div class="card-body">
+
+          <!-- Title -->
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <span class="avatar bg-primary-lt">
+              <i class="ti {{ 'ti-users' if is_customers else 'ti-truck-delivery' }} fs-2"></i>
+            </span>
+            <div class="flex-fill">
+              <h3 class="card-title mb-0">{{ trade['name'] }}</h3>
+              <div class="text-secondary small">{{ 'الصافي (لنا − لهم)' if is_customers else 'الإجمالي' }}</div>
+            </div>
+            <a href="{{ trade['url'] }}" class="stretched-link" title="فتح"></a>
+          </div>
+
+          {% if is_error %}
+          <div class="alert alert-danger mb-0 py-2">
+            <i class="ti ti-alert-circle me-1"></i>{{ trade['content'] }}
+          </div>
+          {% else %}
+          <div class="h1 mb-3">
+            <span dir="ltr">{{ '{:,.2f}'.format(total) }}</span><span class="text-secondary fs-3">$</span>
+          </div>
+
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-secondary">{{ margin_label }}</span>
+            <span class="fw-bold {{ text_color }}">{{ '%.1f'|format(margin) }}%</span>
+          </div>
+          <div class="progress progress-sm mb-3">
+            <div class="progress-bar {{ bar_color }}" style="width: {{ [margin | abs, 100] | min }}%"></div>
+          </div>
+
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="p-2 rounded bg-blue-lt text-center">
+                <div class="small text-secondary"><i class="ti ti-cash-coin"></i> {{ left_label }}</div>
+                <div class="fw-bold">{{ '{:,.2f}'.format(base) }}$</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-2 rounded bg-green-lt text-center">
+                <div class="small text-secondary"><i class="ti ti-cash-banknote-plus"></i> {{ right_label }}</div>
+                <div class="fw-bold">{{ '{:,.2f}'.format(profit) }}$</div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+        </div>
+
+      </div>
+
+    </div>
+
+  {% else %}
+    <div class="col-12">
+      <div class="card">
+        <div class="empty">
+          <div class="empty-icon"><i class="ti ti-mood-empty fs-1"></i></div>
+          <p class="empty-title">لا توجد تجارات بعد</p>
+          <p class="empty-subtitle text-secondary">ابدأ بإضافة أول تجارة لك</p>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

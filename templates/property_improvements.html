@@ -1,0 +1,337 @@
+{% extends "layout.html" %}
+{% block trade %}
+
+{% set sold = property['sell_price'] is not none %}
+
+<!-- Page title -->
+<div class="row align-items-center g-3 mb-4">
+  <div class="col">
+    <div class="d-flex align-items-center gap-3">
+      <span class="avatar avatar-lg bg-primary-lt"><i class="ti ti-tools fs-1"></i></span>
+      <div>
+        <h2 class="mb-0">{{ (property['discreption'] or 'عقار') + ' - التحسينات' }}</h2>
+        <div class="text-secondary">
+          عقار رقم {{ property['id'] }}
+          {% if sold %}
+          <span class="badge bg-green-lt text-green ms-2">مباع</span>
+          {% else %}
+          <span class="badge bg-blue-lt text-blue ms-2">معروض للبيع</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-auto d-flex flex-wrap gap-2">
+    <a href="/property/{{ property['id'] }}/info" class="btn btn-outline-secondary">
+      <i class="ti ti-arrow-right me-1"></i>
+      <span>رجوع</span>
+    </a>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#recordModal" onclick="openAdd()">
+      <i class="ti ti-plus me-1"></i>إضافة تحسين
+    </button>
+    {% if property_improvements %}
+    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" onclick="openDelete()">
+      <i class="ti ti-trash me-1"></i>حذف التحسينات كاملةً
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Summary: سعر الشراء + التحسينات = رأس المال -->
+<div class="row row-cards mb-4">
+
+  <!-- سعر الشراء -->
+  <div class="col-md-4">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-auto"><span class="avatar bg-blue-lt"><i class="ti ti-coin fs-2"></i></span></div>
+          <div class="col">
+            <div class="text-secondary">سعر الشراء</div>
+            <div class="h3 mb-0"><span dir="ltr">{{ '{:,.2f}'.format(property['buy_price']) }}</span>$</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- التحسينات -->
+  <div class="col-md-4">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-auto"><span class="avatar bg-orange-lt"><i class="ti ti-tools fs-2"></i></span></div>
+          <div class="col">
+            <div class="text-secondary">التحسينات</div>
+            <div class="h3 mb-0">
+              {% if property['cost'] %}
+              <span dir="ltr">{{ '{:,.2f}'.format(property['cost']) }}</span>$
+              {% else %}
+              <span class="text-secondary">—</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- رأس المال الإجمالي -->
+  <div class="col-md-4">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-auto"><span class="avatar bg-purple-lt"><i class="ti ti-wallet fs-2"></i></span></div>
+          <div class="col">
+            <div class="text-secondary">رأس المال <span class="small">(شراء + تحسينات)</span></div>
+            <div class="h3 mb-0"><span dir="ltr">{{ '{:,.2f}'.format(property['buy_price'] + property['cost']) }}</span>$</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="row row-cards">
+
+  <!-- Details -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-info-circle me-1"></i>معلومات العقار</h3>
+      </div>
+      <div class="card-body">
+        <div class="datagrid">
+          <div class="datagrid-item">
+            <div class="datagrid-title">الوصف</div>
+            <div class="datagrid-content">{{ property['discreption'] or '—' }}</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">العنوان</div>
+            <div class="datagrid-content">{{ property['address'] or '—' }}</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">اسم البائع</div>
+            <div class="datagrid-content">{{ property['seller_name'] or '—' }}</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">تاريخ الشراء</div>
+            <div class="datagrid-content">{{ property['buy_date'] or '—' }}</div>
+          </div>
+
+          {% if sold %}
+          <div class="datagrid-item">
+            <div class="datagrid-title">اسم المشتري</div>
+            <div class="datagrid-content">{{ property['buyer_name'] or '—' }}</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">تاريخ البيع</div>
+            <div class="datagrid-content">{{ property['sell_date'] or '—' }}</div>
+          </div>
+          {% else %}
+          <div class="datagrid-item">
+            <div class="datagrid-title">الحالة</div>
+            <div class="datagrid-content"><span class="badge bg-blue-lt text-blue">معروض للبيع</span></div>
+          </div>
+          {% endif %}
+
+          <div class="datagrid-item">
+            <div class="datagrid-title">ملاحظات</div>
+            <div class="datagrid-content">{{ property['notes'] or '—' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Records -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-list-details me-1"></i>سجل التحسينات ({{ property_improvements | length }})</h3>
+      </div>
+      {% if property_improvements %}
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table table-hover">
+          <thead>
+            <tr>
+              <th class="w-1">#</th>
+              <th>التحسين</th>
+              <th>التكلفة</th>
+              <th>تاريخ التحسين</th>
+              <th>ملاحظات</th>
+              <th class="w-1"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in property_improvements | sort(attribute='id', reverse=True) %}
+            <tr>
+              <td><span class="badge bg-secondary-lt">{{ r['id'] }}</span></td>
+
+              <td>
+                <div class="fw-semibold">{{ r['description'] or 'بدون وصف' }}</div>
+              </td>
+
+              <td class="text-nowrap"><span dir="ltr">{{ '{:,.2f}'.format(r['cost']) }}$</span></td>
+
+              <td>
+                {% if r['improve_date'] %}
+                <div class="text-secondary small"><i class="ti ti-calendar me-1"></i>{{ r['improve_date'] }}</div>
+                {% else %}
+                <span class="text-secondary">—</span>
+                {% endif %}
+              </td>
+
+              <td class="text-secondary text-truncate" style="max-width: 180px;" title="{{ r['notes'] or '' }}">
+                {{ r['notes'] or '—' }}
+              </td>
+
+              <td class="text-nowrap">
+                <button class="btn btn-icon btn-ghost-secondary fs-2" title="تعديل" data-bs-toggle="modal"
+                  data-bs-target="#recordModal" data-id="{{ r['id'] }}" data-month="{{ r['improve_date'] or '' }}"
+                  data-cost="{{ r['cost'] }}" data-description="{{ r['description'] or '' }}"
+                  data-notes="{{ r['notes'] or '' }}" onclick="openEdit(this)">
+                  <i class="ti ti-pencil"></i>
+                </button>
+                <button class="btn btn-icon btn-ghost-danger fs-2" title="حذف" data-bs-toggle="modal"
+                  data-bs-target="#deleteModal" data-id="{{ r['id'] }}" data-description="{{ r['description'] or '' }}"
+                  onclick="openDelete(this)">
+                  <i class="ti ti-trash"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty">
+        <div class="empty-icon"><i class="ti ti-mood-empty fs-1"></i></div>
+        <p class="empty-title">لا توجد سجلات بعد</p>
+        <p class="empty-subtitle text-secondary">ابدأ بإضافة أول تحسين</p>
+        <div class="empty-action">
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#recordModal" onclick="openAdd()">
+            <i class="ti ti-plus me-1"></i>إضافة تحسين
+          </button>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ===== New / Edit improvement modal ===== -->
+<div class="modal modal-blur fade" id="recordModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <form method="post" id="recordForm" action="" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="ti ti-tools me-1"></i>
+          <span id="recordModalTitle">إضافة تحسين</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label required">وصف التحسين</label>
+            <input type="text" id="f_description" name="description" class="form-control"
+              placeholder="مثال: دهان 4 غرف" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label required">التكلفة</label>
+            <div class="input-group">
+              <input type="number" step="0.01" min="0" name="cost" class="form-control" id="f_cost" dir="ltr" required>
+              <span class="input-group-text">$</span>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">تاريخ التحسين</label>
+            <input type="date" name="improve_date" id="f_month" class="form-control">
+          </div>
+          <div class="col-12">
+            <label class="form-label">ملاحظات</label>
+            <textarea id="f_notes" name="notes" rows="3" class="form-control"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i>حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- ===== Delete modal (تحسين واحد أو الكل) ===== -->
+<div class="modal modal-blur fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <form method="post" action="" id="deleteForm" class="modal-content">
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      <div class="modal-status bg-danger"></div>
+      <div class="modal-body text-center py-4">
+        <i class="ti ti-alert-triangle text-danger mb-2" style="font-size: 3rem;"></i>
+        <h3 id="deleteTitle">حذف التحسين</h3>
+        <div class="text-secondary" id="deleteMessage"></div>
+      </div>
+      <div class="modal-footer">
+        <div class="w-100">
+          <div class="row">
+            <div class="col"><button type="button" class="btn w-100" data-bs-dismiss="modal">إلغاء</button></div>
+            <div class="col"><button type="submit" class="btn btn-danger w-100"><i
+                  class="ti ti-trash me-1"></i>حذف</button></div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<script>
+  const form = document.getElementById('recordForm');
+  const deleteForm = document.getElementById('deleteForm');
+  const improvementsBase = '/property/{{ property['id'] }}/improvements/';
+
+  // تاريخ اليوم بالتوقيت المحلي بصيغة YYYY-MM-DD
+  function today() {
+    return new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  }
+
+  function openAdd() {
+    form.action = improvementsBase + 'add';
+    document.getElementById('recordModalTitle').textContent = 'إضافة تحسين';
+    form.reset();
+    document.getElementById('f_month').value = today();
+  }
+
+  function openEdit(btn) {
+    form.action = improvementsBase + String(btn.dataset.id) + '/edit';
+    document.getElementById('recordModalTitle').textContent = 'تعديل التحسين';
+    document.getElementById('f_description').value = btn.dataset.description;
+    document.getElementById('f_month').value = btn.dataset.month;
+    document.getElementById('f_cost').value = btn.dataset.cost;
+    document.getElementById('f_notes').value = btn.dataset.notes;
+  }
+
+  // openDelete(btn) = حذف تحسين واحد ، openDelete() بلا وسيط = حذف كل التحسينات
+  function openDelete(btn) {
+    const title = document.getElementById('deleteTitle');
+    const msg = document.getElementById('deleteMessage');
+    if (btn) {
+      deleteForm.action = improvementsBase + btn.dataset.id + '/delete';
+      title.textContent = 'حذف التحسين';
+      msg.textContent = 'سيتم حذف التحسين "' + (btn.dataset.description || 'بدون وصف') +
+        '" نهائياً، ولا يمكن التراجع عن ذلك.';
+    } else {
+      deleteForm.action = improvementsBase + 'delete';
+      title.textContent = 'حذف كل التحسينات';
+      msg.textContent = 'سيتم حذف جميع تحسينات هذا العقار ({{ property_improvements | length }}) نهائياً، ولا يمكن التراجع عن ذلك.';
+    }
+  }
+</script>
+{% endblock %}

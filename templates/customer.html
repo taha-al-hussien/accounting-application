@@ -1,0 +1,231 @@
+{% extends "layout.html" %}
+{% block trade %}
+
+{% set ok = customer['status'] != 'error' %}
+{# {% set price = truck['base'] if ok else 0 %} #}
+{% set records = customer.get('content', []) if ok else [] %}
+{% set count = records | length %}
+{# {% set avg = (truck['profit'] / count) if count else 0 %} #}
+
+<!-- Page title -->
+<div class="row align-items-center g-3 mb-4">
+  <div class="col">
+    <div class="d-flex align-items-center gap-3">
+      <span class="avatar avatar-lg bg-primary-lt"><i class="ti ti-truck-delivery fs-1"></i></span>
+      <div>
+        <h2 class="mb-0">الزبائن</h2>
+        <div class="text-secondary">الأرصدة</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-auto d-flex gap-2">
+    <a href="/" class="btn btn-outline-secondary"><i class="ti ti-arrow-right me-1"></i>رجوع</a>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#recordModal" onclick="openAdd()">
+      <i class="ti ti-plus me-1"></i>إضافة زبون
+    </button>
+    {% if records %}
+    <button class="btn btn-danger" data-bs-toggle="modal" data-text="حميع الزبائن" data-bs-target="#deleteModal"
+      onclick="openDelete(this)">
+      <i class="ti ti-trash me-1"></i>حذف كل الزبائن
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Summary: buy price, total profit, average -->
+<div class="row row-cards mb-4">
+  <div class="col-md-4">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-auto"><span class="avatar bg-blue-lt"><i class="ti ti-coin fs-2"></i></span></div>
+          <div class="col">
+            <div class="text-secondary">لنا</div>
+            <div class="h2 mb-0">{{ '{:,.2f}'.format(-customer['for_us']) }}$</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-auto">
+            <span class="avatar {{ 'bg-green-lt' if truck['profit'] >= 0 else 'bg-red-lt' }}">
+              <i class="ti {{ 'ti-trending-up' if truck['profit'] >= 0 else 'ti-trending-down' }} fs-2"></i>
+            </span>
+          </div>
+          <div class="col">
+            <div class="text-secondary">لهم</div>
+            <div class="h2 mb-0 {{ 'text-green' if truck['profit'] >= 0 else 'text-red' }}">
+              <span dir="ltr">{{ '{:,.2f}'.format(customer['for_them']) }}</span>$
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-auto"><span class="avatar bg-orange-lt"><i class="ti ti-chart-line fs-2"></i></span></div>
+          <div class="col">
+            <div class="text-secondary">الإجمالي</div>
+            <div class="h2 mb-0 {{ 'text-red' if -customer['for_us'] - customer['for_them'] < 0 else '' }}">
+              <span dir="ltr">{{ '{:,.2f}'.format(-customer['for_us'] - customer['for_them']) }}</span>$
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Records -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-list-details me-1"></i>الزبائن ({{ count }})</h3>
+  </div>
+  {% if records %}
+  <div class="table-responsive">
+    <table class="table table-vcenter card-table table-hover">
+      <thead>
+        <tr>
+          <th class="w-1">#</th>
+          <th>اسم الزبون</th>
+          <th>لنا</th>
+          <th>لهم</th>
+          <th>الاجمالي</th>
+          <th>ملاحظات</th>
+          <th class="w-1"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records | sort(attribute='record_date', reverse=True) %}
+        <tr>
+          <td><span class="badge bg-secondary-lt">{{ r['id'] }}</span></td>
+          <td class="text-nowrap">
+            {{ r['name'] }}
+          </td>
+          <td>
+            <span dir="ltr">{{ '{:,.2f}'.format(-r['balance']['for_us']) }}$</span>
+          </td>
+          <td>
+            <span dir="ltr">{{ '{:,.2f}'.format(r['balance']['for_them']) }}$</span>
+          </td>
+          <td>
+            {% if -r['balance']['for_us'] - r['balance']['for_them'] < 0 %} <span class="badge bg-red-lt text-red fs-5">
+              <i class="ti ti-arrow-down-right me-1"></i>
+              <span dir="ltr">{{ '{:,.2f}'.format(-r['balance']['for_us'] - r['balance']['for_them']) }}$</span>
+              </span>
+              {% else %}
+              <span class="badge bg-green-lt text-green fs-5">
+                <i class="ti ti-arrow-up-right me-1"></i>
+                <span dir="ltr">{{ '{:,.2f}'.format(-r['balance']['for_us'] - r['balance']['for_them']) }}$</span>
+              </span>
+              {% endif %}
+          </td>
+          <td class="text-secondary">{{ r['notes'] or '—' }}</td>
+          <td class="text-nowrap">
+            <a href="/customer/{{ r['id'] }}/records" class="btn btn-icon btn-outline-secondary" title="سجل الزبون">
+              <i class="ti ti-chevron-left"></i>
+            </a>
+          </td>
+
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon"><i class="ti ti-mood-empty fs-1"></i></div>
+    <p class="empty-title">لا يوجد زبائن بعد</p>
+    <p class="empty-subtitle text-secondary">أضف أول زبون</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Add / Edit modal -->
+<div class="modal modal-blur fade" id="recordModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="post" id="recordForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="recordModalTitle">إضافة زبون</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">الاسم</label>
+          <input type="text" name="name" id="f_name" class="form-control" required>
+        </div>
+        <div class="mb-0">
+          <label class="form-label">ملاحظات</label>
+          <textarea name="notes" id="f_notes" rows="3" class="form-control"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i>حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal modal-blur fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <form method="post" id="deleteForm" class="modal-content">
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      <div class="modal-status bg-danger"></div>
+      <div class="modal-body text-center py-4">
+        <i class="ti ti-alert-triangle text-danger mb-2" style="font-size: 3rem;"></i>
+        <h3 id="deleteTitle"></h3>
+        <div class="text-secondary">
+          سيتم حذف <strong id="text"></strong> نهائياً، ولا يمكن التراجع عن ذلك.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="w-100">
+          <div class="row">
+            <div class="col"><button type="button" class="btn w-100" data-bs-dismiss="modal">إلغاء</button></div>
+            <div class="col"><button type="submit" class="btn btn-danger w-100"><i
+                  class="ti ti-trash me-1"></i>حذف</button></div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById('recordForm');
+  const deleteForm = document.getElementById('deleteForm');
+
+  function openAdd() {
+    form.action = '/customer/add';
+    document.getElementById('recordModalTitle').textContent = 'إضافة زبون';
+    document.getElementById('f_name').value = btn.dataset.name;
+  }
+  function openEdit(btn) {
+    form.action = '/customer/' + btn.dataset.id + '/edit';
+    document.getElementById('recordModalTitle').textContent = 'تعديل زبون';
+    document.getElementById('f_month').value = btn.dataset.month;
+    document.getElementById('f_profit').value = btn.dataset.profit;
+    document.getElementById('f_notes').value = btn.dataset.notes;
+  }
+  function openDelete(btn) {
+    if (btn.dataset.text == "حميع الزبائن") {
+      deleteForm.action = '/customer/delete';
+    } else {
+      deleteForm.action = '/customer/' + btn.dataset.id + '/delete';
+
+    }
+    document.getElementById("text").textContent = btn.dataset.text
+    document.getElementById('deleteMonth').textContent = btn.dataset.month;
+  }
+</script>
+
+{% endblock %}

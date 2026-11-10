@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ar" data-bs-theme="dark" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='img/logo.svg') }}" type="image/svg+xml">
+  <title>{{title}}</title>
+  <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}"> -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-icons.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-icons.min.css') }}">
+  <meta http-equiv="refresh" content="">
+  {% block css_files %}
+  {% if css_files %}
+  {% for css_file_name in css_files %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/' + css_file_name) }}">
+  {% endfor %}
+  {% endif %}
+  {% endblock %}
+</head>
+
+<body>
+  {% block content %}
+
+  {% endblock %}
+
+  <script src="{{ url_for('static', filename='js/tabler.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/global.js') }}"></script>
+  {% block js_files %}
+  {% if js_files %}
+  {% for js_file_name in js_files %}
+  <script src="{{ url_for('static', filename='js/' + js_file_name) }}"></script>
+  {% endfor %}
+  {% endif %}
+  {% endblock %}
+</body>
+
+</html>

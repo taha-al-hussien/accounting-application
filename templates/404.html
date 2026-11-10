@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block trade %}
+<div class="empty">
+  <div class="empty-img">
+    <span class="text-primary fw-bold" style="font-size: 7rem; line-height: 1;">404</span>
+  </div>
+  <p class="empty-title">الصفحة غير موجودة</p>
+  <p class="empty-subtitle text-secondary">
+    الرابط الذي فتحته غير صحيح، أو أن الصفحة حُذفت أو نُقلت.
+  </p>
+  {% if error %}
+  <p class="text-secondary small" dir="ltr">{{ error }}</p>
+  {% endif %}
+  <div class="empty-action d-flex justify-content-center gap-2">
+    <a href="/" class="btn btn-primary"><i class="ti ti-home me-1"></i>الصفحة الرئيسية</a>
+    <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+      <i class="ti ti-arrow-right me-1"></i>رجوع
+    </button>
+  </div>
+</div>
+{% endblock %}

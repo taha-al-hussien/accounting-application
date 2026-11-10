@@ -1,0 +1,125 @@
+<html>
+<head>
+	<title>Click Net - معلومات البطاقة</title>
+	<link rel="icon" type="image/svg+xml" href="images/globe.svg">
+	$(if refresh-timeout)
+	<meta http-equiv="refresh" content="$(refresh-timeout-secs)">
+	$(endif)
+	<meta charset="UTF-8">
+	<meta http-equiv="pragma" content="no-cache">
+	<meta http-equiv="expires" content="-1">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="css/normalize.css">
+	<link rel="stylesheet" href="css/fonts.css">
+	<link rel="stylesheet" href="css/all.min.css">
+	<link rel="stylesheet" href="css/style.css">
+	<script language="JavaScript">
+		<!--
+		$(if advert-pending == 'yes')
+				var popup = '';
+				function focusAdvert() {
+			if (window.focus) popup.focus();
+				}
+				function openAdvert() {
+			popup = open('$(link-advert)', 'hotspot_advert', '');
+			setTimeout("focusAdvert()", 1000);
+				}
+		$(endif)
+				function openLogout() {
+			if (window.name != 'hotspot_status') return true;
+						open('$(link-logout)', 'hotspot_logout', 'toolbar=0,location=0,directories=0,status=0,menubars=0,resizable=1,width=280,height=250');
+			window.close();
+			return false;
+				}
+		//-->
+	</script>
+</head>
+<body $(if advert-pending=='yes' ) onLoad="openAdvert()" $(endif)>
+	<div class="container-logout">
+		<div class="content">
+
+			<div class="detailes">
+				<div class="row">
+					<div>
+						<i class="fa-solid fa-user"></i>
+						<span>اسم المستخدم</span>
+					</div>
+					<div>$(username)</div>
+				</div>
+				<div class="row">
+					<div>
+						<i class="fa-solid fa-link"></i>
+						<span>عنوان الـ(IP)</span>
+					</div>
+					<div>$(ip)</div>
+				</div>
+				<div class="row">
+					<div>
+						<i class="fa-solid fa-fingerprint"></i>
+						<span>عنوان الـ(MAC)</span>
+					</div>
+					<div>$(mac)</div>
+				</div>
+				<div class="row">
+					<div>
+						<i class="fa-solid fa-stopwatch"></i>
+						<span>نشط لمدّة</span>
+					</div>
+					<div>$(uptime)</div>
+				</div>
+				$(if session-time-left)
+				<div class="row">
+					<div>
+						<i class="fa-solid fa-hourglass-half"></i>
+						<span>الوقت المتبقي</span>
+					</div>
+					<div>$(session-time-left)</div>
+				</div>
+				$(endif)
+				<div class="row">
+					<div>
+						<i class="fa-solid fa-upload"></i>
+						<span>تم الرفع</span>
+					</div>
+					<div>$(bytes-in-nice)</div>
+				</div>
+				<div class="row">
+					<div>
+						<i class="fa-solid fa-download"></i>
+						<span>تم التحميل</span>
+					</div>
+					<div>$(bytes-out-nice</div>
+				</div>
+			</div>
+			<form action="$(link-logout)" name="login" onSubmit="return openLogout()">
+				<div>
+					<!-- $(if login-by-mac != 'yes') -->
+					<input type="submit" value="تسجيل الخروج">
+					<!-- $(endif) -->
+				</div>
+			</form>
+		</div>
+	</div>
+		<table>
+			$(if blocked == 'yes')
+				<div>
+					<td>status:</td>
+					<td>
+							<a href="$(link-advert)" target="hotspot_advert">advertisement</a> required
+					</td>	
+				</div>
+			$(elif refresh-timeout)
+				<div>
+					<td>status refresh:</td>
+					<td>$(refresh-timeout)</td>
+				</div>
+			$(endif)
+
+		</table>
+
+		<a class="dev" href="https://t.me/Taha_Al_hussien">
+			<span>Developed by <span>TSA</span></span>
+			<i class="fa-brands fa-telegram"></i>
+		</a>
+</body>
+</html>

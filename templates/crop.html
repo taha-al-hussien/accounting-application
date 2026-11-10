@@ -1,0 +1,336 @@
+{% extends "layout.html" %}
+{% block trade %}
+
+{% set ok = property['status'] != 'error' %}
+{% set records = property.get('content', []) if ok else [] %}
+{% set count = records | length %}
+{# {% set avg = (property['profit'] / count) if count else 0 %} #}
+
+<!-- Page title -->
+<div class="row align-items-center g-3 mb-4">
+  <div class="col">
+    <div class="d-flex align-items-center gap-3">
+      <span class="avatar avatar-lg bg-primary-lt"><i class="ti ti-truck-delivery fs-1"></i></span>
+      <div>
+        <h2 class="mb-0">المحاصيل</h2>
+        <div class="text-secondary">قائمة المحاصيل</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-auto d-flex gap-2">
+    <a href="/" class="btn btn-outline-secondary">
+      <i class="ti ti-arrow-right me-1"></i>
+      رجوع
+    </a>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#recordModal" onclick="openAdd()">
+      <i class="ti ti-plus me-1"></i>محصول جديد
+    </button>
+  </div>
+</div>
+
+<!-- Summary: buy price, total profit, average -->
+<div class="row row-cards mb-4">
+  <div class="col-md-4">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-auto"><span class="avatar bg-blue-lt"><i class="ti ti-coin fs-2"></i></span></div>
+          <div class="col">
+            <div class="text-secondary">رأس مال المحاصيل</div>
+            <div class="h2 mb-0">{{ '{:,.2f}'.format(crop['base']) }}$</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-auto">
+            <span class="avatar {{ 'bg-green-lt' if property['profit'] >= 0 else 'bg-red-lt' }}">
+              <i class="ti {{ 'ti-trending-up' if property['profit'] >= 0 else 'ti-trending-down' }} fs-2"></i>
+            </span>
+          </div>
+          <div class="col">
+            <div class="text-secondary">أرباح المحاصيل</div>
+            <div class="h2 mb-0 {{ 'text-green' if property['profit'] >= 0 else 'text-red' }}">
+              <span dir="ltr">{{ '{:,.2f}'.format(crop['profit']) }}</span>$
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-auto"><span class="avatar bg-orange-lt"><i class="ti ti-chart-line fs-2"></i></span></div>
+          <div class="col">
+            <div class="text-secondary">الإجمالي</div>
+            <div class="h2 mb-0">
+              <span dir="ltr">{{ '{:,.2f}'.format(crop['base'] + crop['profit']) }}</span>$
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row row-deck row-cards">
+  {% for trade in trades['content'] %}
+  {% set is_error = trade['status'] == 'error' %}
+  {% if trades['url'] == '/customer' %}
+  {% set base = trade['for_us'] %}
+  {% set for_them = trade['for_them'] %}
+  {% set for_us = trade['for_us'] + trade['for_them'] %}
+  {% set total = for_them + for_us %}
+  {% set margin = (for_us / total * 100) if total else 0 %}
+  {% set margin_label = 'حصتنا من الرصيد' %}
+  {% set left_label = 'لنا' %}
+  {% set right_label = 'لهم' %}
+  {% set positive = total >= 0 %}
+  {% else %}
+  {% set base = trade.get('base', 0) %}
+  {% set profit = trade.get('profit', 0) %}
+  {% set total = base + profit %}
+  {% set margin = (profit / base * 100) if base else 0 %}
+  {% set margin_label = 'نسبة الربح' %}
+  {% set left_label = 'رأس المال' %}
+  {% set right_label = 'الربح' %}
+  {% set positive = margin >= 0 %}
+  {% endif %}
+  {% set bar_color = 'bg-green' if positive else 'bg-red' %}
+  {% set text_color = 'text-green' if positive else 'text-red' %}
+
+  <div class="col-sm-6 col-lg-4 col-xl-3">
+    <div class="card card-hover">
+      <div class="card-status-top {{ 'bg-red' if is_error else bar_color }}"></div>
+      <div class="card-body">
+
+        <!-- Title -->
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <span class="avatar bg-primary-lt">
+            <i class="ti {{ 'ti-users' if is_customers else 'ti-truck-delivery' }} fs-2"></i>
+          </span>
+          <div class="flex-fill">
+            <h3 class="card-title mb-0">{{ trade['name'] }}</h3>
+            <div class="text-secondary small">{{ 'الصافي (لنا − لهم)' if is_customers else 'الإجمالي' }}</div>
+          </div>
+          <a href="{{ trade['url'] }}" class="stretched-link" title="فتح"></a>
+        </div>
+
+        {% if is_error %}
+        <div class="alert alert-danger mb-0 py-2">
+          <i class="ti ti-alert-circle me-1"></i>{{ trade['content'] }}
+        </div>
+        {% else %}
+        <div class="h1 mb-3 {{ text_color if is_customers else '' }}">
+          <span dir="ltr">{{ '{:,.2f}'.format(total) }}</span><span class="text-secondary fs-3">$</span>
+        </div>
+
+        <div class="d-flex justify-content-between small mb-1">
+          <span class="text-secondary">{{ margin_label }}</span>
+          <span class="fw-bold {{ text_color }}">{{ '%.1f'|format(margin) }}%</span>
+        </div>
+        <div class="progress progress-sm mb-3">
+          <div class="progress-bar {{ bar_color }}" style="width: {{ [margin | abs, 100] | min }}%"></div>
+        </div>
+
+        <div class="row g-2">
+          <div class="col-6">
+            <div class="p-2 rounded bg-blue-lt text-center">
+              <div class="small text-secondary"><i class="ti ti-cash-coin"></i> {{ left_label }}</div>
+              <div class="fw-bold">{{ '{:,.2f}'.format(base) }}$</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-2 rounded bg-green-lt text-center">
+              <div class="small text-secondary"><i class="ti ti-cash-banknote-plus"></i> {{ right_label }}</div>
+              <div class="fw-bold">{{ '{:,.2f}'.format(profit) }}$</div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+
+    </div>
+
+  </div>
+
+  {% else %}
+  <div class="col-12">
+    <div class="card">
+      <div class="empty">
+        <div class="empty-icon"><i class="ti ti-mood-empty fs-1"></i></div>
+        <p class="empty-title">لا توجد تجارات بعد</p>
+        <p class="empty-subtitle text-secondary">ابدأ بإضافة أول تجارة لك</p>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{#
+<!-- Records -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-list-details me-1"></i>السجلات ({{ count }})</h3>
+  </div>
+  {% if records %}
+  <div class="table-responsive">
+    <table class="table table-vcenter card-table table-hover">
+      <thead>
+        <tr>
+          <th class="w-1">#</th>
+          <th>العقار</th>
+          <th>رأس المال</th>
+          <th>سعر البيع</th>
+          <th>الربح</th>
+          <th>المشتري</th>
+          <th>ملاحظات</th>
+          <th class="w-1"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records | sort(attribute='id', reverse=True) %}
+        {% set sold = r['sell_price'] is not none %}
+        <tr>
+          <td><span class="badge bg-secondary-lt">{{ r['id'] }}</span></td>
+
+          <td>
+            <div class="fw-semibold">{{ r['discreption'] or 'بدون وصف' }}</div>
+            <div class="text-secondary small"><i class="ti ti-map-pin me-1"></i>{{ r['address'] or '—' }}</div>
+          </td>
+
+          <td class="text-nowrap"><span dir="ltr">{{ '{:,.2f}'.format(r['buy_price'] + r['cost']) }}$</span></td>
+
+          <td class="text-nowrap">
+            {% if sold %}
+            <span dir="ltr">{{ '{:,.2f}'.format(r['sell_price']) }}$</span>
+            {% else %}
+            <span class="text-secondary"></span>
+            {% endif %}
+          </td>
+
+          <td>
+            {% if sold %}
+            {% set diff = r['sell_price'] - r['buy_price'] - r['cost']%}
+            <span class="badge {{ 'bg-green-lt text-green' if diff >= 0 else 'bg-red-lt text-red' }} fs-5">
+              <i class="ti {{ 'ti-arrow-up-right' if diff >= 0 else 'ti-arrow-down-right' }} me-1"></i>
+              <span dir="ltr">{{ '{:,.2f}'.format(diff) }}$</span>
+            </span>
+            {% else %}
+            <span class="badge bg-yellow-lt text-yellow">لم تُبَع بعد</span>
+            {% endif %}
+          </td>
+
+          <td>
+            {% if sold %}
+            <div>{{ r['buyer_name'] or '—' }}</div>
+            <div class="text-secondary small"><i class="ti ti-calendar me-1"></i>{{ r['sell_date'] or '—' }}</div>
+            {% else %}
+            <span class="text-secondary"></span>
+            {% endif %}
+          </td>
+
+          <td class="text-secondary text-truncate" style="max-width: 180px;" title="{{ r['notes'] or '' }}">
+            {{ r['notes'] or '—' }}
+          </td>
+
+          <td>
+            <a href="/property/{{ r['id'] }}/info" class="btn btn-icon btn-ghost-secondary" title="تفاصيل">
+              <i class="ti ti-chevron-left"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon"><i class="ti ti-mood-empty fs-1"></i></div>
+    <p class="empty-title">لا توجد سجلات بعد</p>
+    <p class="empty-subtitle text-secondary">ابدأ بإضافة أول عقار</p>
+  </div>
+  {% endif %}
+</div> #}
+
+
+<!-- New property modal -->
+<div class="modal modal-blur fade" id="recordModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <form method="post" id="recordForm" action="/property/add" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="ti ti-home-plus me-1"></i>عقار جديد</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label required">وصف العقار</label>
+            <input type="text" name="discreption" class="form-control" placeholder="مثال: أرض 200 م²" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label required">العنوان</label>
+            <input type="text" name="address" class="form-control" placeholder="الحي، الشارع" required>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label required">سعر الشراء</label>
+            <div class="input-group">
+              <input type="number" step="0.01" min="0" name="buy_price" class="form-control" dir="ltr" required>
+              <span class="input-group-text">$</span>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">تاريخ الشراء</label>
+            <input type="date" name="buy_date" id="f_buy_date" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label required">اسم البائع</label>
+            <input type="text" name="seller_name" class="form-control" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">خط الطول <span class="text-secondary small">(اختياري)</span></label>
+            <input type="number" step="any" name="longitude" class="form-control" dir="ltr">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">خط العرض <span class="text-secondary small">(اختياري)</span></label>
+            <input type="number" step="any" name="latitude" class="form-control" dir="ltr">
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">ملاحظات</label>
+            <textarea name="notes" rows="3" class="form-control"></textarea>
+          </div>
+        </div>
+        <div class="text-secondary small mt-3">
+          <i class="ti ti-info-circle me-1"></i>بيانات البيع (المشتري والسعر والتاريخ) تُضاف لاحقاً عند بيع العقار.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i>حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById('recordForm');
+  const deleteForm = document.getElementById('deleteForm');
+
+  function openAdd() {
+    form.action = '/property/add';
+    document.getElementById('recordModalTitle').textContent = 'إضافة سجل';
+    form.reset();
+    document.getElementById('f_month').value = new Date().toISOString().slice(0, 7);
+  }
+</script>
+
+{% endblock %}
